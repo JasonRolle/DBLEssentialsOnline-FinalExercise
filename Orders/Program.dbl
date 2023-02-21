@@ -31,17 +31,17 @@ main Orders
 		max             ,i4,3       ;Maximum detail records currently supported
 	endrecord
 
-porc
+proc
 
-	xcall startup
-	xcall process
-	xcall shutdown
+	call startup
+	call process
+	call shutdown
 
 	stop
 
-;----------------------------------------
-;Application startup processing
-;
+	;----------------------------------------
+	;Application startup processing
+	;
 Startup,
 
 	;Get the current date and time
@@ -70,7 +70,7 @@ Startup,
 	begin
 		open(hchan=%syn_freechn,u:i,"DAT:header.ism") [$ERR_FNF=hnf]
 		exitloop
-hnf,    xcall isamc("DAT:header.ism",46,1,"start=1,length=6,nodups,nomodify")
+	hnf,    xcall isamc("DAT:header.ism",46,1,"start=1,length=6,nodups,nomodify")
 	end
 
 	;Open order detail file.  If not found, create it
@@ -78,14 +78,14 @@ hnf,    xcall isamc("DAT:header.ism",46,1,"start=1,length=6,nodups,nomodify")
 	begin
 		open(dchan=%syn_freechn,u:i,"DAT:detail.ism") [$ERR_FNF=dnf]
 		exitloop
-dnf,    xcall isamc("DAT:detail.ism",33,1,"start=1:7,length=6:4,nodups,nomodify")
+	dnf,    xcall isamc("DAT:detail.ism",33,1,"start=1:7,length=6:4,nodups,nomodify")
 	end
 
 	return
 
-;----------------------------------------
-;Application shutdown processing
-;
+	;----------------------------------------
+	;Application shutdown processing
+	;
 Shutdown,
 
 	;Close windowing system
@@ -106,9 +106,9 @@ Shutdown,
 
 	return
 
-;----------------------------------------
-;Main application processing
-;
+	;----------------------------------------
+	;Main application processing
+	;
 Process,
 
 	xcall create_window(menu_id,"MENU",10,30,5,25,"Order Processing Menu")
@@ -141,9 +141,9 @@ Process,
 
 	return
 
-;----------------------------------------
-;Order header processing
-;
+	;----------------------------------------
+	;Order header processing
+	;
 Order_header,
 
 	xcall create_window(header_id,"HEADER",10,60,6,10,"Order Header")
@@ -198,9 +198,9 @@ Order_header,
 
 	return
 
-;----------------------------------------
-;Order detail processing
-;
+	;----------------------------------------
+	;Order detail processing
+	;
 Order_detail,
 
 	clear count
@@ -214,6 +214,7 @@ Order_detail,
 	begin
 
 		incr count
+
 		xcall s_bld(temp,,"Order Detail (Entering item %d of %d)",count,max)
 		xcall w_brdr(detail_id,WB_TITLE,%atrim(temp))
 
@@ -225,22 +226,27 @@ Order_detail,
 		end
 
 		xcall input(detail_id,4,15,^m(strDetail[count].od_qty,m_handle),1)
-		xcall input(detail_id,5,15,^m(strDetail[count].od_unitprice,m_handle),1)
+		xcall input(detail_id,5,15,^m(strDetail[count].od_unit_price,m_handle),1)
 
 		^m(strDetail[count].od_number,m_handle)=oh_number
 		^m(strDetail[count].od_item,m_handle)=count
 
 		xcall clear_box(detail_id,2,15,5,60)
+
+		if( count >= max )
+		begin
+			call Extend_dynamic_memory
+		end
 	end
 
 	xcall delete_window(detail_id)
 
 	return
 
-;----------------------------------------
-;When the number of defail records to be held in dynamic memory exceeds
-;the currently allocated memory, allocate some more!
-;
+	;----------------------------------------
+	;When the number of detail records to be held in dynamic memory exceeds
+	;the currently allocated memory, allocate some more!
+	;
 Extend_dynamic_memory,
 
 	max=max+3
@@ -248,8 +254,8 @@ Extend_dynamic_memory,
 
 	return
 
-;----------------------------------------
-;
+	;----------------------------------------
+	;
 View_order,
 
 	xcall create_window(header_id,"HEADER",10,60,6,10,"Order Header")
@@ -258,7 +264,7 @@ View_order,
 	xcall display_text(header_id,4,2,"Customer account:")
 	xcall display_text(header_id,5,2,"      Order date:")
 	xcall display_text(header_id,6,2,"       Placed by:")
-	xcall display_text(heeder_id,7,2,"       Sales rep:")
+	xcall display_text(header_id,7,2,"       Sales rep:")
 
 	repeat
 	begin
@@ -268,7 +274,7 @@ View_order,
 		if oh_number.eq.0
 			exitloop
 
-		if (%file_access(FileOp.ReadNext,hchan,header,oh_number).ne.FileResult.OK) then
+		if (%file_access(FileOp.Read,hchan,header,oh_number).ne.FileResult.OK) then
 			xcall display_message("Order not found!")
 		else
 		begin
@@ -284,7 +290,7 @@ View_order,
 
 			call view_order_detail
 
-			xcall clear_box(header_id,4,20,9,60)
+			xcall clear_box(header_id,2,20,7,60)
 
 		end
 	end
